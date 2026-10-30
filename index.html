@@ -12,8 +12,9 @@
             color: #ffffff; font-family: 'Montserrat', sans-serif;
             overflow-x: hidden; min-height: 100vh;
             display: flex; justify-content: center; align-items: center;
+            position: relative;
         }
-        .screen { display: none; width: 100%; max-width: 500px; padding: 20px; text-align: center; animation: fadeIn 1s ease; }
+        .screen { display: none; width: 100%; max-width: 500px; padding: 20px; text-align: center; animation: fadeIn 1s ease; position: relative; z-index: 2; }
         .screen.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -166,7 +167,7 @@
         }
 
         /* Кнопки на финальном экране */
-        .reveal-btn, .extra-btn {
+        .reveal-btn, .extra-btn, .continue-btn {
             display: block;
             margin: 25px auto 0 auto;
             background: linear-gradient(135deg, #6a1b9a, #b388ff);
@@ -183,7 +184,7 @@
             width: 100%;
         }
 
-        .reveal-btn:active, .extra-btn:active { transform: scale(0.98); }
+        .reveal-btn:active, .extra-btn:active, .continue-btn:active { transform: scale(0.98); }
         .reveal-btn.hidden, .extra-btn.hidden { display: none; }
 
         /* Стили для текста "А ЕЩЁ ЧТО?" */
@@ -212,9 +213,133 @@
             font-weight: bold;
             margin-top: 20px;
         }
+
+        /* Падающие сердечки на фоне */
+        .falling-hearts {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .falling-hearts span {
+            position: absolute;
+            top: -10%;
+            font-size: 24px;
+            color: #ff4d6d;
+            animation: fall linear infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 0.6; }
+            100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Секретное сообщение */
+        .secret-message {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #6a1b9a;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-family: 'Caveat', cursive;
+            font-size: 24px;
+            box-shadow: 0 0 40px rgba(179, 136, 255, 0.8);
+            z-index: 100;
+            animation: popIn 0.5s ease;
+            text-align: center;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        #secretTitle {
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        #secretTitle:active {
+            transform: scale(0.95);
+        }
+
+        /* =========================================
+           НОВЫЙ ЭКРАН "Я ЗНАЮ О ТЕБЕ ВСЕ"
+           ========================================= */
+        .know-all-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .know-card {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #6a1b9a;
+            box-shadow: 0 0 15px rgba(106, 27, 154, 0.4);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            background: #000;
+        }
+
+        .know-card img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            filter: blur(25px) brightness(0.5);
+            transition: filter 0.8s ease, transform 0.8s ease;
+            z-index: 1;
+        }
+
+        .know-card.revealed img {
+            filter: blur(0) brightness(0.8);
+            transform: scale(1.05);
+        }
+
+        .know-card .card-label {
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(to top, rgba(26, 11, 46, 0.95), rgba(26, 11, 46, 0));
+            padding: 15px 10px 10px 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+            text-shadow: 1px 1px 3px #000;
+        }
+
+        .know-card .card-label span {
+            display: block;
+            font-size: 11px;
+            font-weight: 300;
+            color: #b388ff;
+            margin-top: 4px;
+        }
+
+        .tap-hint {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 10px;
+            animation: pulse 2s infinite;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Падающие сердечки -->
+    <div class="falling-hearts" id="fallingHearts"></div>
 
     <!-- ЭКРАН 1: ПАРОЛЬ -->
     <div class="screen active" id="screen-password">
@@ -292,7 +417,7 @@
 
     <!-- ЭКРАН 6: ФИНАЛЬНЫЙ -->
     <div class="screen" id="screen-final">
-        <h2 style="font-family: 'Caveat', cursive; font-size: 32px; color: #e0b0ff; margin-bottom: 20px;">Я тебя обожаю.</h2>
+        <h2 id="secretTitle" onclick="triggerSecret()" style="font-family: 'Caveat', cursive; font-size: 32px; color: #e0b0ff; margin-bottom: 20px;">Я тебя обожаю.</h2>
         
         <div class="heart-frame-wrapper">
             <div class="photo-container" id="photoContainer">
@@ -313,9 +438,61 @@
         <button class="extra-btn hidden" id="extraBtn" onclick="showExtraText()">А ЕЩЁ ЧТО?</button>
         
         <div id="extraContent" style="display: none;"></div>
+        
+        <!-- Кнопка ПРОДОЛЖАЙ (появится после текста) -->
+        <button class="continue-btn hidden" id="continueBtn" onclick="goToKnowAll()">ПРОДОЛЖАЙ</button>
+    </div>
+
+    <!-- ЭКРАН 7: Я ЗНАЮ О ТЕБЕ ВСЕ -->
+    <div class="screen" id="screen-know-all">
+        <h2 style="font-family: 'Caveat', cursive; font-size: 36px; color: #e0b0ff; margin-bottom: 10px;">Я ЗНАЮ О ТЕБЕ ВСЕ</h2>
+        <p class="tap-hint">Нажми на каждую карточку, чтобы открыть</p>
+        
+        <div class="know-all-grid">
+            <!-- Карточка 1: Любимая машина -->
+            <div class="know-card" onclick="revealCard(this)">
+                <img src="car.jpg" alt="Car">
+                <div class="card-label">Любимая машина<span>BMW M4</span></div>
+            </div>
+            
+            <!-- Карточка 2: Любимые песни -->
+            <div class="know-card" onclick="revealCard(this)">
+                <img src="music.jpg" alt="Music">
+                <div class="card-label">Любимые песни<span>Наши с тобой</span></div>
+            </div>
+            
+            <!-- Карточка 3: Любимый муж -->
+            <div class="know-card" onclick="revealCard(this)">
+                <img src="husband.jpg" alt="Husband">
+                <div class="card-label">Любимый муж<span>(это я ;) )</span></div>
+            </div>
+            
+            <!-- Карточка 4: Мечта года -->
+            <div class="know-card" onclick="revealCard(this)">
+                <img src="dream.jpg" alt="Dream">
+                <div class="card-label">Мечта года<span>Питер, мы вместе</span></div>
+            </div>
+        </div>
     </div>
 
     <script>
+        // Падающие сердечки
+        function createFallingHearts() {
+            const container = document.getElementById('fallingHearts');
+            const heartsCount = 20;
+            for (let i = 0; i < heartsCount; i++) {
+                const heart = document.createElement('span');
+                heart.innerText = '❤️';
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                heart.style.animationDelay = Math.random() * 5 + 's';
+                heart.style.fontSize = (Math.random() * 15 + 15) + 'px';
+                container.appendChild(heart);
+            }
+        }
+        createFallingHearts();
+
+        // Проверка пароля
         function checkPassword() {
             const input = document.getElementById('passInput').value.trim().toLowerCase();
             const btn = document.getElementById('openBtn');
@@ -415,39 +592,88 @@
             container.classList.add('revealed');
             btn.classList.add('hidden');
             
-            // Показываем кнопку "А ЕЩЁ ЧТО?" через секунду после снятия блюра
             setTimeout(() => {
                 extraBtn.classList.remove('hidden');
             }, 1200);
         }
 
+        // Текст с эффектом печатающей машинки
         function showExtraText() {
             const extraBtn = document.getElementById('extraBtn');
             const extraContent = document.getElementById('extraContent');
+            const continueBtn = document.getElementById('continueBtn');
             
             extraBtn.classList.add('hidden');
             extraContent.style.display = 'block';
-            extraContent.innerHTML = `
-                <div class="extra-text">
-                    <p>Малышка моя... Моя маленькая принцесса, моя богиня, моя красавица. Я даже не знаю, с чего начать, потому что слов кажется так мало по сравнению с тем, что я чувствую к тебе.</p>
-                    
-                    <p>Знаешь, когда я думаю о тебе, у меня внутри всё переворачивается. Ты — та самая девочка, которая смогла сделать невозможное: ты заставила меня поверить в то, что любовь существует, что можно ждать, что можно хотеть быть лучше ради кого-то. И этот кто-то — ты.</p>
-                    
-                    <p>Мы сейчас на расстоянии, и это единственное, что меня по-настоящему расстраивает. Но я знаю, что через год мы будем вместе. В Питере. Я уже представляю этот момент: как я встречу тебя, как обниму крепко-крепко, как возьму твоё лицо в свои руки и наконец-то поцелую. Я так сильно этого хочу, малышка, ты даже не представляешь. Этот поцелуй будет для меня как награда за всё ожидание.</p>
-                    
-                    <p>Ты — моя самая лучшая. Не просто красивая, а именно красивая внутри и снаружи. У тебя такое доброе сердце, такая искренняя душа. Ты умеешь поддержать, умеешь рассмешить, умеешь быть рядом, даже когда между нами километры. И я это очень ценю.</p>
-                    
-                    <p>Моя принцесса, ты для меня — целый мир. Твои глаза, твой голос, твоя улыбка, твои волосы — всё это сводит меня с ума. Когда ты присылаешь мне видео, когда просто пишешь мне, когда звонишь — я чувствую себя самым счастливым человеком на земле.</p>
-                    
-                    <p>Я хочу, чтобы ты знала: я никогда тебя не брошу. Я буду с тобой и в хорошие, и в плохие моменты. Буду поддерживать тебя во всём, буду гордиться тобой, буду любить тебя каждый день всё сильнее и сильнее. Ты — моя богиня, моя красавица, моя самая родная малышка.</p>
-                    
-                    <p>Спасибо тебе за то, что ты есть. За то, что ты выбрала меня. За то, что ты терпишь меня, когда я веду себя как дурак. Я обещаю, что буду стараться стать лучше ради тебя, ради нас.</p>
-                    
-                    <p>Люблю тебя бесконечно. Обнимаю тебя крепко-крепко. Целую твои ручки, твои щёчки, твой лоб. И мысленно всегда рядом с тобой, моя маленькая принцесса. ❤️</p>
-                    
-                    <p>Твой, навсегда твой.</p>
-                </div>
-            `;
+            
+            const fullText = `Малышка моя... Моя маленькая принцесса, моя богиня, моя красавица. Я даже не знаю, с чего начать, потому что слов кажется так мало по сравнению с тем, что я чувствую к тебе.
+
+Знаешь, когда я думаю о тебе, у меня внутри всё переворачивается. Ты — та самая девочка, которая смогла сделать невозможное: ты заставила меня поверить в то, что любовь существует, что можно ждать, что можно хотеть быть лучше ради кого-то. И этот кто-то — ты.
+
+Мы сейчас на расстоянии, и это единственное, что меня по-настоящему расстраивает. Но я знаю, что через год мы будем вместе. В Питере. Я уже представляю этот момент: как я встречу тебя, как обниму крепко-крепко, как возьму твоё лицо в свои руки и наконец-то поцелую. Я так сильно этого хочу, малышка, ты даже не представляешь. Этот поцелуй будет для меня как награда за всё ожидание.
+
+Ты — моя самая лучшая. Не просто красивая, а именно красивая внутри и снаружи. У тебя такое доброе сердце, такая искренняя душа. Ты умеешь поддержать, умеешь рассмешить, умеешь быть рядом, даже когда между нами километры. И я это очень ценю.
+
+Моя принцесса, ты для меня — целый мир. Твои глаза, твой голос, твоя улыбка, твои волосы — всё это сводит меня с ума. Когда ты присылаешь мне видео, когда просто пишешь мне, когда звонишь — я чувствую себя самым счастливым человеком на земле.
+
+Я хочу, чтобы ты знала: я никогда тебя не брошу. Я буду с тобой и в хорошие, и в плохие моменты. Буду поддерживать тебя во всём, буду гордиться тобой, буду любить тебя каждый день всё сильнее и сильнее. Ты — моя богиня, моя красавица, моя самая родная малышка.
+
+Спасибо тебе за то, что ты есть. За то, что ты выбрала меня. За то, что ты терпишь меня, когда я веду себя как дурак. Я обещаю, что буду стараться стать лучше ради тебя, ради нас.
+
+Люблю тебя бесконечно. Обнимаю тебя крепко-крепко. Целую твои ручки, твои щёчки, твой лоб. И мысленно всегда рядом с тобой, моя маленькая принцесса. ❤️`;
+
+            extraContent.innerHTML = `<div class="extra-text" id="typewriterText"></div>`;
+            const typewriterElement = document.getElementById('typewriterText');
+            
+            let i = 0;
+            const speed = 15;
+            
+            function typeWriter() {
+                if (i < fullText.length) {
+                    const char = fullText.charAt(i);
+                    if (char === '\n') {
+                        typewriterElement.innerHTML += '<br>';
+                    } else {
+                        typewriterElement.innerHTML += char;
+                    }
+                    i++;
+                    setTimeout(typeWriter, speed);
+                } else {
+                    typewriterElement.innerHTML += '<p style="text-align: center; font-weight: bold; margin-top: 20px;">Твой, навсегда твой.</p>';
+                    // Когда текст допечатан, показываем кнопку ПРОДОЛЖАЙ
+                    continueBtn.classList.remove('hidden');
+                }
+            }
+            typeWriter();
+        }
+
+        // Переход на экран "Я ЗНАЮ О ТЕБЕ ВСЕ"
+        function goToKnowAll() {
+            document.getElementById('screen-final').classList.remove('active');
+            document.getElementById('screen-know-all').classList.add('active');
+        }
+
+        // Открытие карточки в сетке (снятие блюра)
+        function revealCard(cardElement) {
+            cardElement.classList.add('revealed');
+        }
+
+        // Секретное сообщение (нажми на заголовок 5 раз)
+        let secretCount = 0;
+        function triggerSecret() {
+            secretCount++;
+            if (secretCount === 5) {
+                const secretDiv = document.createElement('div');
+                secretDiv.className = 'secret-message';
+                secretDiv.innerText = 'Ты нашла секрет! Я люблю тебя ещё сильнее ❤️';
+                document.body.appendChild(secretDiv);
+                
+                setTimeout(() => {
+                    secretDiv.remove();
+                }, 4000);
+                
+                secretCount = 0;
+            }
         }
     </script>
 </body>
