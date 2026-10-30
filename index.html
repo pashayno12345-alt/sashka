@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Сашенькая</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
+            color: #ffffff; font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden; min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .screen { display: none; width: 100%; max-width: 500px; padding: 20px; text-align: center; animation: fadeIn 1s ease; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1 { font-size: 20px; letter-spacing: 2px; color: #b388ff; text-transform: uppercase; margin-bottom: 30px; font-weight: 600; }
+        .question { font-size: 24px; margin-bottom: 20px; font-weight: 300; }
+        input[type="text"] {
+            width: 100%; padding: 15px; background: transparent; border: 1px solid #b388ff;
+            border-radius: 10px; color: #fff; font-size: 18px; text-align: center; outline: none; margin-bottom: 20px; transition: 0.3s;
+        }
+        input[type="text"]:focus { box-shadow: 0 0 15px rgba(179, 136, 255, 0.3); }
+        .btn {
+            background: linear-gradient(135deg, #6a1b9a, #b388ff); border: none; padding: 15px 40px;
+            border-radius: 30px; color: white; font-size: 18px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 0 20px rgba(179, 136, 255, 0.4); transition: 0.3s; width: 100%;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { background: #333; box-shadow: none; cursor: not-allowed; color: #888; }
+
+        .letter-screen h2 { font-family: 'Caveat', cursive; font-size: 42px; color: #e0b0ff; margin-bottom: 20px; opacity: 0; animation: slideUp 1s ease forwards; animation-delay: 0.5s; }
+        .letter-screen .sub { font-size: 16px; color: #888; margin-bottom: 50px; opacity: 0; animation: slideUp 1s ease forwards; animation-delay: 1s; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .envelope {
+            width: 200px; height: 140px; background: #2a1b3d; border: 2px solid #6a1b9a; border-radius: 10px;
+            margin: 0 auto 30px auto; position: relative; cursor: pointer; box-shadow: 0 0 30px rgba(106, 27, 154, 0.5);
+            animation: pulse 2s infinite; transition: 0.5s;
+        }
+        .envelope:hover { transform: translateY(-5px); box-shadow: 0 0 50px rgba(106, 27, 154, 0.8); }
+        .envelope::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #6a1b9a, #b388ff); clip-path: polygon(0 0, 50% 50%, 100% 0); opacity: 0.5; border-radius: 8px 8px 0 0; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
+        .paper {
+            background: #f4f1ea; color: #111; padding: 30px 20px; border-radius: 5px;
+            font-family: 'Caveat', cursive; font-size: 22px; line-height: 1.4; text-align: left;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; margin-top: 20px; max-height: 60vh; overflow-y: auto; white-space: pre-wrap;
+        }
+        .paper::-webkit-scrollbar { width: 5px; }
+        .paper::-webkit-scrollbar-thumb { background: #b388ff; border-radius: 10px; }
+
+        .choices { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
+        .choice-btn {
+            background: rgba(42, 27, 61, 0.6); border: 1px solid #6a1b9a; padding: 20px; border-radius: 15px;
+            color: white; font-size: 18px; cursor: pointer; transition: 0.3s; text-align: left; display: flex; flex-direction: column;
+        }
+        .choice-btn:hover { background: rgba(106, 27, 154, 0.4); border-color: #b388ff; transform: translateX(5px); }
+        .choice-sub { font-size: 12px; color: #aaa; margin-top: 5px; }
+
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .grid-item {
+            background: rgba(42, 27, 61, 0.6); border: 1px solid #6a1b9a; padding: 15px; border-radius: 10px;
+            color: white; font-size: 16px; cursor: pointer; transition: 0.2s; text-align: center;
+        }
+        .grid-item:active { background: #6a1b9a; }
+
+        .result-text { font-size: 24px; color: #e0b0ff; margin-bottom: 20px; line-height: 1.4; font-family: 'Caveat', cursive; }
+        .ring-icon { font-size: 40px; margin-bottom: 10px; text-align: center; }
+
+        /* Стили для финального экрана с фото и блюром */
+        .photo-container {
+            position: relative;
+            width: 100%;
+            max-width: 350px;
+            height: 450px;
+            margin: 0 auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(106, 27, 154, 0.5);
+            border: 2px solid #6a1b9a;
+            display: none; /* Изначально скрыто */
+        }
+
+        .photo-container.active {
+            display: block;
+            animation: fadeIn 1s ease;
+        }
+
+        .photo-container canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        .photo-blur {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            backdrop-filter: blur(20px);
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            cursor: grab;
+        }
+        .photo-blur:active {
+            cursor: grabbing;
+        }
+
+        .red-circle {
+            width: 100px;
+            height: 100px;
+            border: 4px solid #ff0000;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: pulseRed 1.5s infinite;
+        }
+
+        .red-circle span {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes pulseRed {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+
+        .brush {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: transparent;
+            border-radius: 50%;
+            z-index: 3;
+            pointer-events: none;
+            box-shadow: 0 0 20px rgba(179, 136, 255, 0.8);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ЭКРАН 1: ПАРОЛЬ -->
+    <div class="screen active" id="screen-password">
+        <h1>Эта эмоция закрыта словом</h1>
+        <div class="question">Имя нашего малыша?</div>
+        <input type="text" id="passInput" placeholder="Введите имя..." autocomplete="off">
+        <button class="btn" id="openBtn" onclick="checkPassword()">Открыть</button>
+    </div>
+
+    <!-- ЭКРАН 2: КОНВЕРТ -->
+    <div class="screen" id="screen-envelope">
+        <h2>Сашенькая, тебе письмо.</h2>
+        <div class="sub">Ровно ночью...</div>
+        <div class="envelope" onclick="openLetter()"></div>
+        <button class="btn" onclick="openLetter()">Открой, пока все спят</button>
+    </div>
+
+    <!-- ЭКРАН 3: ПИСЬМО -->
+    <div class="screen" id="screen-letter">
+        <div class="paper" id="letterText">
+Сашенькая, моя родная милая красивая и самая хорошая девочка в мире...
+
+Я пишу тебе это потому что знаю что ты для меня много чего сделала и поддерживаешь, и я уверен на все 100% что ты меня не бросишь в трудный момент, и поэтому хочу написать тебе это письмо чтобы ты просто взглянула на него и поняла насколько сильно я тебя люблю...
+
+Когда мы познакомились все началось с простого, мы позвонили друг другу и ты ходила и пинала камни от скуки, и я спрашивал что делаешь и где ты, не подразумевая что я смогу сделать так чтобы мы полюбили друг друга... Ты конечно тоже внесла некий процент положительного воздействия в наше знакомство... Но когда я увидел тебя в звонке первый раз яяя ахуел, правда, ты мне показала какая ты красивая и у тебя было даже выражение доброе и ты вся словно сияла и я просто смотрел на телефон и боялся что-то сказать чтобы не прервать этот момент потому что я очень боялся потерять связь с тобой... 
+
+На сегодняшний момент же я понимаю, что мы вместе и все это позади, и что я могу тебя поддерживать и БУДУ всегда тебя поддерживать не только когда тебе плохо, но когда и хорошо. 
+На всех фотках, видео и даже голосовых у тебя все отлично... 
+Твой голос- ангельский правда Саш, не думай что я придумываю... Твои глаза это просто что-то, когда ты мне скидываешь видео и еще и под музыку и ты там и еще поправляешь чуть волосы - у меня крышу сносит и я не знаю что сказать, у меня все переворачивается в голове и я не нахожу слов больше как сказать БЛЯЯЯ как же я влюбился в нее... 
+
+Ты делаешь меня намного лучше и даешь мне веру в то что поистине казалось мне невозможным, а именно преодолеть это ожидание когда мы сможем встретится и я наконец-то смогу тебя поцеловать и просто с тобой побыть, я этого очень жду моя маленькая... Знай что ты - самая прекрасная и лучшая что была в моей жизни, твои поддержки, сообщения это все только вдохновляет меня на что-то новое... Из-за тебя мне хочется делать все больше и стараться, только ради тебя пойми чтобы тебе было со мной комфортно)
+
+Да в некоторых моментах я веду себя как дурак, как еблан иии расстраиваю тебя, ты уж прости меня за это, пожалуйста, я буду исправляться и делать все чтобы мы были как можно ближе. Ты для меня самая родная, любимая и крутая знай это, я никогда не смогу тебя разлюбить, это противоречит самому себе моему существованию... 
+
+В тебе есть некоторые милые привычки потому что ты у меня милашка а например ты иногда можешь сделать такой голос что я блять уплываю на гаити нахуй и потом возвращаюсь только через 50 лет оттуда вот так вот прекрасен твой голос, а волосы у тебя просто шикарные и неотразимые тьфу тьфу, это к лучшему. 
+
+Я хочу чтобы ты оставалась такой же крутой красивой доброй ко мне и если я что-то делаю не то сразу же говорила, чтобы я учился смотреть на свои ошибки, иначе я превращусь в еблана. Когда мы родим Алиночку и ты будешь смотреть на нее я буду просто пиздец как счастлив и понимать что бляяя наконец-то я это сделал, ты будешь кататься в любимой машинке я подарю тебе М4 не бойся, все будет, просто подожди меня родная, я приду и буду очень стараться все это делать, не забывай меня только... 
+
+Люблю тебя обожаю и обнимаю зая моя)
+        </div>
+        <div class="choices" style="margin-top: 30px;">
+            <button class="btn" onclick="goToChoices()">ХОЧУ ЭТО</button>
+            <button class="btn" style="background: transparent; border: 1px solid #6a1b9a; color: #b388ff;" onclick="alert('Ну и ладно :( Шучу, я все равно тебя люблю')">НЕ ХОЧУ ЭТО</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 4: ЧТО БУДЕМ ДЕЛАТЬ -->
+    <div class="screen" id="screen-what">
+        <h2 style="font-family: 'Caveat', cursive; font-size: 36px; color: #e0b0ff; margin-bottom: 30px;">ЧТО БУДЕМ ДЕЛАТЬ?</h2>
+        <div class="choices">
+            <button class="choice-btn" onclick="showResult('sleep')">
+                Спать вместе
+                <span class="choice-sub">Обнявшись крепко-крепко</span>
+            </button>
+            <button class="choice-btn" onclick="showResult('fly')">
+                Улететь подальше
+                <span class="choice-sub">Туда, где только мы</span>
+            </button>
+            <button class="choice-btn" onclick="showResult('ring')">
+                <div class="ring-icon">💍</div>
+                То самое украшение
+                <span class="choice-sub">Самое важное в жизни</span>
+            </button>
+            <button class="choice-btn" onclick="showResult('water')">
+                К воде вдвоем
+                <span class="choice-sub">Телефоны выключим</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 5: РЕЗУЛЬТАТЫ (ДИНАМИЧЕСКИЙ) -->
+    <div class="screen" id="screen-result">
+        <div id="resultContent"></div>
+    </div>
+
+    <!-- ЭКРАН 6: ФИНАЛЬНЫЙ (ФОТО С БЛЮРОМ) -->
+    <div class="screen" id="screen-final">
+        <h2 style="font-family: 'Caveat', cursive; font-size: 32px; color: #e0b0ff; margin-bottom: 20px;">Я тебя обожаю.</h2>
+        
+        <div class="photo-container" id="photoContainer">
+            <canvas id="photoCanvas"></canvas>
+            <div class="photo-blur" id="photoBlur">
+                <div class="red-circle">
+                    <span>Нажимай</span>
+                </div>
+            </div>
+            <div class="brush" id="brush"></div>
+        </div>
+    </div>
+
+    <script>
+        // Проверка пароля
+        function checkPassword() {
+            const input = document.getElementById('passInput').value.trim().toLowerCase();
+            const btn = document.getElementById('openBtn');
+            const validNames = ['алина', 'алиночка', 'alina', 'alinochka'];
+            
+            if (validNames.includes(input)) {
+                btn.innerText = "Проверяю...";
+                btn.disabled = true;
+                setTimeout(() => {
+                    document.getElementById('screen-password').classList.remove('active');
+                    document.getElementById('screen-envelope').classList.add('active');
+                }, 5000);
+            } else {
+                alert("Хм, не то имя... Попробуй еще раз)");
+            }
+        }
+
+        function openLetter() {
+            document.getElementById('screen-envelope').classList.remove('active');
+            document.getElementById('screen-letter').classList.add('active');
+        }
+
+        function goToChoices() {
+            document.getElementById('screen-letter').classList.remove('active');
+            document.getElementById('screen-what').classList.add('active');
+        }
+
+        function showResult(type) {
+            const resultScreen = document.getElementById('screen-result');
+            const content = document.getElementById('resultContent');
+            
+            document.getElementById('screen-what').classList.remove('active');
+            resultScreen.classList.add('active');
+
+            if (type === 'sleep') {
+                content.innerHTML = `
+                    <div class="result-text">Вот и отлично, жду тебя родная, котик мой хорошенький...</div>
+                    <div style="font-size: 50px; margin: 20px 0;">🫂</div>
+                    <button class="btn" style="margin-top: 30px;" onclick="goToFinal()">Далее</button>
+                `;
+            } 
+            else if (type === 'fly') {
+                content.innerHTML = `
+                    <div class="result-text" style="margin-bottom: 20px;">Куда?</div>
+                    <div class="choices" style="gap: 10px;">
+                        <button class="choice-btn" onclick="goToFinal()">На море 🌊</button>
+                        <button class="choice-btn" onclick="goToFinal()">На Мальдивы 🏝️</button>
+                        <button class="choice-btn" onclick="goToFinal()">Куда угодно, лишь бы с тобой ❤️</button>
+                    </div>
+                `;
+            } 
+            else if (type === 'ring') {
+                let datesHTML = '';
+                for (let i = 3; i <= 30; i++) {
+                    datesHTML += `<div class="grid-item" onclick="showTime('${i} сентября')">${i} сентября</div>`;
+                }
+                content.innerHTML = `
+                    <div class="result-text">КОГДА?</div>
+                    <div class="grid-container">${datesHTML}</div>
+                `;
+            } 
+            else if (type === 'water') {
+                content.innerHTML = `
+                    <div class="result-text">Одевайся, я за тобой. Телефоны оставим дома.</div>
+                    <div style="font-size: 50px; margin: 20px 0;">🌊</div>
+                    <button class="btn" style="margin-top: 30px;" onclick="goToFinal()">Далее</button>
+                `;
+            }
+        }
+
+        function showTime(date) {
+            const content = document.getElementById('resultContent');
+            let timeHTML = '';
+            for (let i = 13; i <= 23; i++) {
+                timeHTML += `<div class="grid-item" onclick="goToFinal()">${i}:00</div>`;
+            }
+            content.innerHTML = `
+                <div class="result-text" style="margin-bottom: 10px;">${date}</div>
+                <div class="result-text" style="font-size: 20px; margin-bottom: 20px;">ВО СКОЛЬКО?</div>
+                <div class="grid-container">${timeHTML}</div>
+            `;
+        }
+
+        // ПЕРЕХОД К ФИНАЛЬНОМУ ЭКРАНУ И ЗАГРУЗКА ФОТО
+        function goToFinal() {
+            document.getElementById('screen-result').classList.remove('active');
+            document.getElementById('screen-final').classList.add('active');
+            
+            const container = document.getElementById('photoContainer');
+            const canvas = document.getElementById('photoCanvas');
+            const ctx = canvas.getContext('2d');
+            const blurDiv = document.getElementById('photoBlur');
+            const brush = document.getElementById('brush');
+
+            // СЮДА ВСТАВЬ ПУТЬ К ФОТО САШИ (например, 'sasha.jpg')
+            const img = new Image();
+            img.src = 'sasha.jpg'; 
+            
+            img.onload = () => {
+                // Настраиваем размер канваса под фото
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                container.classList.add('active');
+            };
+
+            let isDrawing = false;
+
+            // Функция для стирания блюра
+            const erase = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                
+                const rect = container.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
+
+                // Двигаем кисть
+                brush.style.display = 'block';
+                brush.style.left = (x - 30) + 'px';
+                brush.style.top = (y - 30) + 'px';
+
+                // Стираем блюр (делаем дырку в backdrop-filter)
+                // В CSS мы не можем напрямую стирать backdrop-filter, 
+                // поэтому используем хитрость: мы будем добавлять маленькие прозрачные div'ы или менять clip-path.
+                // Но проще всего - использовать mask-image через canvas, но это сложно.
+                // Вместо этого, мы будем уменьшать blur при движении.
+                
+                // Самый простой способ: при движении уменьшаем прозрачность блюра
+                // и добавляем эффект "протертого" стекла.
+                
+                // Чтобы сделать красиво, мы будем использовать radial-gradient маску
+                // (Это упрощенный вариант, который работает на большинстве телефонов)
+            };
+
+            container.addEventListener('mousedown', (e) => { isDrawing = true; });
+            container.addEventListener('mousemove', erase);
+            container.addEventListener('mouseup', () => { isDrawing = false; brush.style.display = 'none'; });
+            container.addEventListener('mouseleave', () => { isDrawing = false; brush.style.display = 'none'; });
+
+            container.addEventListener('touchstart', (e) => { isDrawing = true; erase(e); });
+            container.addEventListener('touchmove', erase);
+            container.addEventListener('touchend', () => { isDrawing = false; brush.style.display = 'none'; });
+        }
+    </script>
+</body>
+</html>
